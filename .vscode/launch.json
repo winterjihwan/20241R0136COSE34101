@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/anjihwan/Documents/운영체제/cpu",
+      "program": "/Users/anjihwan/Documents/운영체제/cpu/build/Debug/outDebug"
+    }
+  ]
+}
