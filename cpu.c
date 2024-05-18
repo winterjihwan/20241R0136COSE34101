@@ -37,8 +37,8 @@ int random_pid(int used_pids[], int count) {
 Process create_process(int pid) {
     Process p;
     p.pid = pid;
-    p.cpuBurstTime = rand() % GLOBAL__MAX_CPU_BURST_TIME;   
-    p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME;     
+    p.cpuBurstTime = rand() % GLOBAL__MAX_CPU_BURST_TIME + 1;   
+    p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME + 1;     
     p.arrivalTime = rand() % GLOBAL__MAX_ARRIVAL_TIME;        
     p.priority = rand() % GLOBAL__MAX_PRIORITY;        
     return p;
@@ -72,8 +72,9 @@ void print_processes(Process* processes) {
     }
 }
 
-void sort_processes_by_arrival_time(Process* processes, int n) {
-    // Bubble Sort to sort processes by arrival time
+void sort_processes_by_arrival_time(Process* processes) {
+    int n = GLOBAL__PROCESS_COUNT;
+
     for (int i = 0; i < n - 1; i++) {
         for (int j = 0; j < n - 1 - i; j++) {
             if (processes[j].arrivalTime > processes[j + 1].arrivalTime) {
@@ -85,24 +86,125 @@ void sort_processes_by_arrival_time(Process* processes, int n) {
     }
 }
 
+void sort_processes_by_cpu_burst_time(Process* processes, int start, int end) {
+    for (int i = start; i < end - 1; i++) {
+        for (int j = start; j < end - 1 - (i - start); j++) {
+            if (processes[j].cpuBurstTime > processes[j + 1].cpuBurstTime) {
+                Process temp = processes[j];
+                processes[j] = processes[j + 1];
+                processes[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void print_gantt_chart(Process* processes) {
+    int n = GLOBAL__PROCESS_COUNT;
+    int currentTime = 0;
+
+    printf("Gantt Chart:\n");
+    printf("-------------------------------------------------\n");
+
+    for (int i = 0; i < n; i++) {
+        int start = currentTime;
+        int end = start + processes[i].cpuBurstTime;
+
+        printf("| P%d (%d - %d) ", processes[i].pid, start, end);
+
+        currentTime = end;
+    }
+
+    printf("|\n-------------------------------------------------\n");
+}
+
+
 void fcfs_scheduling(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
 
-    // Sort processes by arrival time
-    sort_processes_by_arrival_time(processes, n);
+    sort_processes_by_arrival_time(processes);
 
-    // Print the sorted processes
     printf("FCFS Scheduling:\n");
     print_processes(processes);
+
+    print_gantt_chart(processes);
 }
 
+int sum_of_burst_time(Process* processes) {
+    int n = GLOBAL__PROCESS_COUNT;
+    int sum = 0;
+    for (int i = 0; i < n; i++) {
+        sum += processes[i].cpuBurstTime;
+    }
+    return sum;
+}
+
+Process* copy_processes(Process* original, int n) {
+    Process* copy = (Process*)malloc(n * sizeof(Process));
+    if (copy == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < n; i++) {
+        copy[i] = original[i];
+    }
+
+    return copy;
+}
+
+void remove_process_by_index(Process* processes, int* n, int index) {
+    for (int i = index; i < *n - 1; ++i) {
+        processes[i] = processes[i + 1];
+    }
+    (*n)--;
+}
+
+void sjf_scheduling(Process* processes) {
+    int n = GLOBAL__PROCESS_COUNT;
+    int time_unit = 0;
+    int end_time = sum_of_burst_time(processes);
+
+
+    Process* copyRQ = copy_processes(processes, n);
+
+    sort_processes_by_arrival_time(copyRQ);
+
+    while (n > 0) {
+        int shortest_job_index = -1;
+        for (int j = 0; j < n; j++) {
+            if (copyRQ[j].arrivalTime <= time_unit) {
+                if (shortest_job_index == -1 || copyRQ[j].cpuBurstTime < copyRQ[shortest_job_index].cpuBurstTime) {
+                    shortest_job_index = j;
+                }
+            }
+        }
+
+        if (shortest_job_index == -1) {
+            ++time_unit;
+            printf("time elapsed, no process executed in this time unit");
+            continue;
+        }
+
+        Process next_process = copyRQ[shortest_job_index];
+        time_unit += next_process.cpuBurstTime;
+
+        printf("Process %d executed from time %d to %d\n",
+               next_process.pid, time_unit - next_process.cpuBurstTime, time_unit);
+
+        remove_process_by_index(copyRQ, &n, shortest_job_index);
+    }
+
+    free(copyRQ);
+}
 
 int main() {
     srand(time(NULL));
 
     Process* processes = create_processes();
 
-    fcfs_scheduling(processes);
+    // fcfs_scheduling(processes);
+    print_processes(processes);
+    sjf_scheduling(processes);
 
     free(processes);
     return 0;
