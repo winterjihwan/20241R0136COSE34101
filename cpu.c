@@ -162,8 +162,6 @@ void remove_process_by_index(Process* processes, int* n, int index) {
 void sjf_scheduling(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
     int time_unit = 0;
-    int end_time = sum_of_burst_time(processes);
-
 
     Process* copyRQ = copy_processes(processes, n);
 
@@ -197,6 +195,45 @@ void sjf_scheduling(Process* processes) {
     free(copyRQ);
 }
 
+void preemptive_sjf_scheduling(Process* processes){
+    int n = GLOBAL__PROCESS_COUNT;
+    int time_unit = 0;
+    int total_burst_time = sum_of_burst_time(processes);
+
+    Process* copyRQ = copy_processes(processes, n);
+
+    sort_processes_by_arrival_time(copyRQ);
+
+    while (n > 0) {
+        int shortest_job_index = -1;
+        for (int j = 0; j < n; j++) {
+            if (copyRQ[j].arrivalTime <= time_unit) {
+                if (shortest_job_index == -1 || copyRQ[j].cpuBurstTime < copyRQ[shortest_job_index].cpuBurstTime) {
+                    shortest_job_index = j;
+                }
+            }
+        }
+
+        if (shortest_job_index == -1) {
+            ++time_unit;
+            printf("time elapsed, no process executed in this time unit");
+            continue;
+        }
+
+        Process next_process = copyRQ[shortest_job_index];
+        copyRQ[shortest_job_index].cpuBurstTime --;
+        if (copyRQ[shortest_job_index].cpuBurstTime == 0) {
+            remove_process_by_index(copyRQ, &n, shortest_job_index);
+        }
+        time_unit ++;
+
+        printf("Process %d executed from time %d to %d\n",
+               next_process.pid, time_unit - 1, time_unit);
+    }
+
+    free(copyRQ);
+}
+
 int main() {
     srand(time(NULL));
 
@@ -204,7 +241,8 @@ int main() {
 
     // fcfs_scheduling(processes);
     print_processes(processes);
-    sjf_scheduling(processes);
+    // sjf_scheduling(processes);
+    preemptive_sjf_scheduling(processes);
 
     free(processes);
     return 0;
