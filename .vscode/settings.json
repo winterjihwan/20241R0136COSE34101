@@ -56,6 +56,7 @@
   "files.associations": {
     "*.sol": "solidity",
     "stdio.h": "c",
-    "scheduling.h": "c"
+    "scheduling.h": "c",
+    "stdbool.h": "c"
   }
 }

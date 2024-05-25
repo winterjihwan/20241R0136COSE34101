@@ -1,6 +1,7 @@
 #include "createProcesses.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 int randomPid(int usedPids[], int count) {
     int pid;
@@ -40,5 +41,73 @@ Process* createProcesses() {
     }
 
     free(usedPids);
+    return processes;
+}
+
+Process* createCustomProcesses() {
+    int n = GLOBAL__PROCESS_COUNT;
+    Process* processes = (Process*)malloc(n * sizeof(Process));
+    if (!processes) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < n; i++) {
+        printf("Enter details for process %d:\n", i + 1);
+
+        printf("PID: ");
+        scanf("%d", &processes[i].pid);
+
+        printf("CPU Burst Time: ");
+        scanf("%d", &processes[i].cpuBurstTime);
+
+        printf("I/O Burst Time: ");
+        scanf("%d", &processes[i].ioBurstTime);
+
+        printf("Arrival Time: ");
+        scanf("%d", &processes[i].arrivalTime);
+
+        printf("Priority: ");
+        scanf("%d", &processes[i].priority);
+
+        printf("\n");
+    }
+
+    return processes;
+}
+
+Process* createDebugProcesses() {
+    int n = GLOBAL__PROCESS_COUNT;
+    Process* processes = (Process*)malloc(n * sizeof(Process));
+    if (!processes) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+
+    processes[0].pid = 1;
+    processes[0].cpuBurstTime = 2;
+    processes[0].priority = 4;
+    processes[0].arrivalTime = 2;
+
+    processes[1].pid = 2;
+    processes[1].cpuBurstTime = 4;
+    processes[1].priority = 1;
+    processes[1].arrivalTime = 1;
+
+    processes[2].pid = 3;
+    processes[2].cpuBurstTime = 1;
+    processes[2].priority = 2;
+    processes[2].arrivalTime = 5;
+
+    processes[3].pid = 4;
+    processes[3].cpuBurstTime = 7;
+    processes[3].priority = 2;
+    processes[3].arrivalTime = 4;
+
+    processes[4].pid = 5;
+    processes[4].cpuBurstTime = 4;
+    processes[4].priority = 3;
+    processes[4].arrivalTime = 30;
+
     return processes;
 }

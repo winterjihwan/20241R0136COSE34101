@@ -15,10 +15,29 @@ int GLOBAL__PROCESS_COUNT = 5;
 int main() {
     srand(time(NULL));
 
-    Process* processes = createProcesses();
+    int choice;
+    // printf("Choose process creation method:\n");
+    // printf("1. Random\n");
+    // printf("2. Custom\n");
+    // printf("Enter your choice: ");
+    // scanf("%d", &choice);
 
+    Process* processes;
+    // if (choice == 1) {
+    //     processes = createProcesses();
+    // } else if (choice == 2) {
+    //     processes = createCustomProcesses();
+    // } else {
+    //     printf("Invalid choice.\n");
+    //     return 1;
+    // }
+    processes = createDebugProcesses();
     printProcesses(processes);
-    // preemptiveSjfScheduling(processes);
+
+    // printProcesses(processes);
+    fcfsScheduling(processes);
+    sjfScheduling(processes);
+    preemptiveSjfScheduling(processes);
 
     free(processes);
     return 0;

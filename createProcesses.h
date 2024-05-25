@@ -4,5 +4,7 @@
 #include "process.h"
 
 Process* createProcesses();
+Process* createCustomProcesses();
+Process* createDebugProcesses();
 
 #endif // CREATE_PROCESSES_H
