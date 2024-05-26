@@ -35,9 +35,16 @@ int main() {
     printProcesses(processes);
 
     // printProcesses(processes);
+    printf("FCFS Scheduling\n");
     fcfsScheduling(processes);
+    printf("SJF Scheduling\n");
     sjfScheduling(processes);
+    printf("Preemptive SJF Scheduling\n");
     preemptiveSjfScheduling(processes);
+    printf("Priority Scheduling\n");
+    priorityScheduling(processes);
+    printf("Preemptive Priority Scheduling\n");
+    preemptivePriorityScheduling(processes);
 
     free(processes);
     return 0;

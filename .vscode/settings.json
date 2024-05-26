@@ -57,6 +57,8 @@
     "*.sol": "solidity",
     "stdio.h": "c",
     "scheduling.h": "c",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "gannt.h": "c",
+    "gantt.h": "c"
   }
 }
