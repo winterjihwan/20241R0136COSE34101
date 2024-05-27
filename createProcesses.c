@@ -90,9 +90,9 @@ Process* createDebugProcesses() {
     processes[0].arrivalTime = 2;
 
     processes[1].pid = 2;
-    processes[1].cpuBurstTime = 4;
+    processes[1].cpuBurstTime = 3;
     processes[1].priority = 1;
-    processes[1].arrivalTime = 1;
+    processes[1].arrivalTime = 2;
 
     processes[2].pid = 3;
     processes[2].cpuBurstTime = 1;
@@ -102,7 +102,7 @@ Process* createDebugProcesses() {
     processes[3].pid = 4;
     processes[3].cpuBurstTime = 7;
     processes[3].priority = 2;
-    processes[3].arrivalTime = 4;
+    processes[3].arrivalTime = 6;
 
     processes[4].pid = 5;
     processes[4].cpuBurstTime = 4;

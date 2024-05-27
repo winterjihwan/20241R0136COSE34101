@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// 버블소트
 void sortProcessesByArrivalTime(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
 
