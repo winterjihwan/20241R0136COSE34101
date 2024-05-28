@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include "queue.h"
 
-// /**
-//  * @brief FCFS 스케줄링
-//  * @details 도착 순으로 정렬되어 있는 프로세스 시퀀스를 인자로 받았다는  것을 전제한다 (main()에서 sortProcessesByArrivalTime() 호출)
-//  * @param processes 프로세스 배열
-//  */
+/**
+ * @brief FCFS 스케줄링
+ * @details 도착 순으로 정렬되어 있는 프로세스 시퀀스를 인자로 받았다는  것을 전제한다 (main()에서 sortProcessesByArrivalTime() 호출)
+ * @param processes 프로세스 배열
+ */
 void fcfsScheduling(Process* processes) {
     // ================================================================
     // │                            Setup                             │
@@ -94,7 +94,6 @@ void sjfScheduling(Process* processes) {
     }
 
     Process* runProcess = NULL;
-
     int deactivatePreeemptionCounter = 0;
 
     // ================================================================
@@ -244,7 +243,6 @@ void priorityScheduling(Process* processes) {
     }
 
     Process* runProcess = NULL;
-
     int deactivatePreeemptionCounter = 0;
 
     // ================================================================
@@ -374,3 +372,81 @@ void preemptivePriorityScheduling(Process* processes) {
     free(ganttQueue);
 }
 
+void roundRobinScheduling(Process* processes, int quantum){
+    // ================================================================
+    // │                            Setup                             │
+    // ================================================================
+
+    int n = GLOBAL__PROCESS_COUNT;
+    int timeUnit = 0;
+
+    Process* currentProcess = NULL;
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
+
+    int quantumCounter = 0;
+    int runTime = 0;
+
+    // ================================================================
+    // │                          Scheduling                          │  
+    // ================================================================
+
+    while(n > 0){
+        for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+            if(processesCopy[i].arrivalTime == timeUnit){
+                enqueue(readyQueue, &processesCopy[i]);
+                continue;
+            }
+        }
+
+        if(isEmpty(readyQueue)){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
+            continue;
+        }
+        
+        currentProcess = peek(readyQueue);
+        
+        if (!quantumCounter) {
+            dequeue(readyQueue);
+            if(currentProcess->cpuBurstTime == 0){
+                n--;
+                if(n==0){
+                    break;
+                }
+            } else {
+                enqueue(readyQueue, currentProcess);
+            }
+
+            currentProcess = peek(readyQueue);
+            runTime = (currentProcess->cpuBurstTime < quantum) ? currentProcess->cpuBurstTime : quantum;
+            quantumCounter = --runTime;
+        } else {
+            quantumCounter--;
+        }
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, currentProcess->pid, timeUnit, timeUnit + 1);
+        currentProcess->cpuBurstTime--;
+        currentProcess->ioTime--;
+
+        if (currentProcess->ioTime == 0) {
+            enqueue(waitingQueue, currentProcess);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        timeUnit++;
+    }
+
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
+
+}
