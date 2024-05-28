@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "queue.h"
+#include "evaluate.h"
 
 /**
  * @brief FCFS 스케줄링
@@ -60,6 +61,7 @@ void fcfsScheduling(Process* processes) {
         runProcess->ioTime--;
 
         if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
             dequeue(readyQueue);
             n--;
         }
@@ -67,6 +69,7 @@ void fcfsScheduling(Process* processes) {
         timeUnit++;
     }
 
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -139,6 +142,7 @@ void sjfScheduling(Process* processes) {
         runProcess->ioTime--;
 
         if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
             dequeueByPid(readyQueue, runProcess->pid);
             n--;
         }
@@ -146,6 +150,7 @@ void sjfScheduling(Process* processes) {
         timeUnit++;
     }
 
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -209,6 +214,7 @@ void preemptiveSjfScheduling(Process* processes) {
         runProcess->ioTime--;
 
         if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
             dequeue(readyQueue);
             n--;
         }
@@ -216,6 +222,7 @@ void preemptiveSjfScheduling(Process* processes) {
         timeUnit++;
     }
 
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -289,6 +296,7 @@ void priorityScheduling(Process* processes) {
         runProcess->ioTime--;
 
         if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
             dequeueByPid(readyQueue, runProcess->pid);
             n--;
         }
@@ -296,6 +304,7 @@ void priorityScheduling(Process* processes) {
         timeUnit++;
     }
 
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -359,6 +368,7 @@ void preemptivePriorityScheduling(Process* processes) {
         runProcess->ioTime--;
 
         if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
             dequeue(readyQueue);
             n--;
         }
@@ -366,6 +376,7 @@ void preemptivePriorityScheduling(Process* processes) {
         timeUnit++;
     }
 
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -416,6 +427,7 @@ void roundRobinScheduling(Process* processes, int quantum){
         if (!quantumCounter) {
             dequeue(readyQueue);
             if(currentProcess->cpuBurstTime == 0){
+                currentProcess->completionTime = timeUnit;
                 n--;
                 if(n==0){
                     break;
@@ -444,9 +456,9 @@ void roundRobinScheduling(Process* processes, int quantum){
         timeUnit++;
     }
 
+    // evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
     free(ganttQueue);
-
 }

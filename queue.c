@@ -228,26 +228,23 @@ Process* dequeueByPid(Queue* queue, int pid) {
     Node* current = queue->front;
     Node* previous = NULL;
 
-    // Traverse the queue to find the process by pid
     while (current != NULL && current->process->pid != pid) {
         previous = current;
         current = current->next;
     }
 
-    // If process is not found
     if (current == NULL) {
         printf("Process with PID %d not found in the queue\n", pid);
         return NULL;
     }
 
-    // Process found, remove it
-    if (previous == NULL) { // The process is at the front
+    if (previous == NULL) { 
         queue->front = current->next;
     } else {
         previous->next = current->next;
     }
 
-    if (current->next == NULL) { // The process is at the rear
+    if (current->next == NULL) { 
         queue->rear = previous;
     }
 
