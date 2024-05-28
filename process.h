@@ -16,6 +16,8 @@ typedef struct {
     int arrivalTime;    
     int priority;
     int completionTime;   
+    int waitingTime;
+    int deadline;
 } Process;
 
 

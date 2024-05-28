@@ -28,5 +28,6 @@ void executeWaitingQueue(Queue* waitingQueue, Queue* readyQueue);
 void printQueue(Queue* queue);
 Process* findProcessByArrivalTime(Queue* queue, int timeUnit);
 Process* dequeueByPid(Queue* queue, int pid);
+Process* highestResponseRatio(Queue* queue, int currentTime);
 
 #endif // 

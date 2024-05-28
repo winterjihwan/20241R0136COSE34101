@@ -252,3 +252,32 @@ Process* dequeueByPid(Queue* queue, int pid) {
     free(current);
     return process;
 }
+
+
+Process* highestResponseRatio(Queue* queue, int currentTime) {
+    if (queue->front == NULL) {
+        return NULL;
+    }
+
+    Node* current = queue->front;
+    Process* highestRRProcess = NULL;
+    double highestResponseRatio = -1.0;
+
+    while (current != NULL) {
+        printf("--------------------------\n");
+        if (current->process->arrivalTime <= currentTime) {
+            int waitingTime = currentTime - current->process->arrivalTime;
+            double responseRatio = ((double)(waitingTime + current->process->cpuBurstTime)) / current->process->cpuBurstTime;
+
+            printf("Time unit: %d, PID: %d, Response Ratio: %f\n", currentTime, current->process->pid, responseRatio);
+
+            if (highestRRProcess == NULL || responseRatio > highestResponseRatio) {
+                highestResponseRatio = responseRatio;
+                highestRRProcess = current->process;
+            }
+        }
+        current = current->next;
+    }
+
+    return highestRRProcess;
+}

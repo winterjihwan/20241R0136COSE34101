@@ -462,3 +462,76 @@ void roundRobinScheduling(Process* processes, int quantum){
     freeQueue(waitingQueue);
     free(ganttQueue);
 }
+
+void hrrnScheduling(Process* processes) {
+    // ================================================================
+    // │                            Setup                             │
+    // ================================================================
+
+    int n = GLOBAL__PROCESS_COUNT;
+    int timeUnit = 0;
+
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
+
+    Process* runProcess = NULL;
+    int deactivatePreeemptionCounter = 0;
+
+    for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+        enqueue(readyQueue, &processesCopy[i]);
+    }
+
+    // ================================================================
+    // │                          Scheduling                          │  
+    // ================================================================
+
+    while(n > 0){
+        if(!deactivatePreeemptionCounter){
+            runProcess = highestResponseRatio(readyQueue, timeUnit);
+            if(runProcess != NULL){
+                deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+            }
+        } else {
+            deactivatePreeemptionCounter--;
+        }
+
+        if(runProcess == NULL){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
+            continue;
+        }
+
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeueByPid(readyQueue, runProcess->pid);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            runProcess->completionTime = timeUnit+1;
+            dequeueByPid(readyQueue, runProcess->pid);
+            n--;
+        }
+
+        timeUnit++;
+    }
+
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
+}
