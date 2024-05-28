@@ -3,118 +3,155 @@
 #include "gantt.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "queue.h"
 
+// /**
+//  * @brief FCFS 스케줄링
+//  * @details 도착 순으로 정렬되어 있는 프로세스 시퀀스를 인자로 받았다는  것을 전제한다 (main()에서 sortProcessesByArrivalTime() 호출)
+//  * @param processes 프로세스 배열
+//  */
 void fcfsScheduling(Process* processes) {
     // ================================================================
     // │                            Setup                             │
     // ================================================================
 
-    // 프로세스 개수
     int n = GLOBAL__PROCESS_COUNT;
-    // 출력을 위해 갠트차트 initialize
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
-    // Time 0으로 초기화
     int timeUnit = 0;
+
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
 
     // ================================================================
     // │                          Scheduling                          │  
     // ================================================================
 
-    // 프로세스 개수만큼 반복
-    for (int i = 0; i < n; i++) {
-        if (timeUnit < processes[i].arrivalTime) {
-            // 다음 실행 프로세스의 도착 시간이 timeUnit보다 클 경우 => 지금 실행 가능한 프로세스가 없다; 갠트 큐에 idle 기입
-            enqueueGanttQueue(&queue, -1, timeUnit, processes[i].arrivalTime);
-            // 다음 실행 프로세스 시작 시간으로 설정
-            timeUnit = processes[i].arrivalTime;
+    while(n > 0){
+        for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+            if(processesCopy[i].arrivalTime == timeUnit){
+                enqueue(readyQueue, &processesCopy[i]);
+            }
         }
-        // 현재 프로세스 처리
-        int start = timeUnit;
-        int end = start + processes[i].cpuBurstTime;
-        enqueueGanttQueue(&queue, processes[i].pid, start, end);
-        timeUnit = end;
+
+        if(isEmpty(readyQueue)){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
+            continue;
+        }
+
+        Process* runProcess = peek(readyQueue);
+
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeue(readyQueue);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            dequeue(readyQueue);
+            n--;
+        }
+
+        timeUnit++;
     }
 
-    // 갠트차트 출력
-    printGanttChart(queue);
-    free(queue);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
 }
-
-/**
- * @brief setup 코드는 거의 동일하다
- * 
- */
 
 void sjfScheduling(Process* processes) {
     // ================================================================
     // │                            Setup                             │
     // ================================================================
 
-    // 프로세스 개수
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
 
-    // Processes 재사용을 위해 레디큐 복사
-    Process* copyRQ = copyProcesses(processes, n);
+    Process* processesCopy = copyProcesses(processes, n);
 
-    // 출력을 위해 갠트 차트 initialize
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
+
+    for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+        enqueueSjf(readyQueue, &processesCopy[i]);
+    }
+
+    Process* runProcess = NULL;
+
+    int deactivatePreeemptionCounter = 0;
 
     // ================================================================
     // │                          Scheduling                          │  
     // ================================================================
+    
+    while(n > 0 ){
+        Node* currentNode;
 
-    // FCFS와는 달리, 프로세스 수만큼 루프하는 것이 아니라, 모든 프로세스가 작업을 마칠 때까지 루프
-    while (n > 0) {
-        // [SJI] 가장 짧은 CPU Burst Time을 가진 프로세스의 인덱스; -1일 경우 실행 가능한 프로세스가 없다 
-        int shortestJobIndex = -1;
-        // 다음 실행 후보를 선택 하기 위한 for loop
-        for (int j = 0; j < n; j++) {
-            // 현재 실행 가능한 프로세스
-            if (copyRQ[j].arrivalTime <= timeUnit) {
-                // 처음으로 배정 가능한 프로세스
-                if (shortestJobIndex == -1) {
-                    shortestJobIndex = j;
-                    // burst time이 더 짧은 프로세스
-                } else if (copyRQ[j].cpuBurstTime < copyRQ[shortestJobIndex].cpuBurstTime) {
-                    shortestJobIndex = j;
-                    // 일종의 타이브레이커, 동일한 burst time의 경우 arrival time으로 비교
-                } else if (copyRQ[j].cpuBurstTime == copyRQ[shortestJobIndex].cpuBurstTime && copyRQ[j].arrivalTime < copyRQ[shortestJobIndex].arrivalTime) {
-                    shortestJobIndex = j;
+        if(!deactivatePreeemptionCounter){
+            for(currentNode = readyQueue -> front; currentNode != NULL; currentNode = currentNode -> next){
+                if (currentNode -> process -> arrivalTime <= timeUnit){
+                    runProcess = currentNode -> process;
+                    break;
                 }
             }
         }
 
-        // 프로세스 전부 탐색했는데, 실행 가능한 프로세스가 없다면 idle기입
-        if (shortestJobIndex == -1) {
-            ++timeUnit;
-            enqueueGanttQueue(&queue, -1, timeUnit - 1, timeUnit); // CPU is idle
+        if(runProcess == NULL){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
             continue;
         }
 
-        // 실행 가능한 프로세스가 있다면, 해당 프로세스를 처리
-        Process nextProcess = copyRQ[shortestJobIndex];
-        int startTime = timeUnit;
-        // non preemptive이므로, burst time만큼 방해 없이 실행
-        int endTime = startTime + nextProcess.cpuBurstTime;
-        enqueueGanttQueue(&queue, nextProcess.pid, startTime, endTime);
-        timeUnit = endTime;
-        // 프로세스 처리 완료했다면 레디큐에서 릴리즈
-        removeProcessByIndex(copyRQ, &n, shortestJobIndex);
+        if(deactivatePreeemptionCounter == 0){
+            deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+        }else{
+            deactivatePreeemptionCounter--;
+        }
+
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeue(readyQueue);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            dequeueByPid(readyQueue, runProcess->pid);
+            n--;
+        }
+
+        timeUnit++;
     }
 
-    // 갠트차트 출력
-    printGanttChart(queue);
-    free(queue);
-    free(copyRQ);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
 }
-
-/**
- * @brief setup 코드는 non preemptive sjf와 거의 동일하다
- * 
- */
 
 void preemptiveSjfScheduling(Process* processes) {
     // ================================================================
@@ -124,52 +161,66 @@ void preemptiveSjfScheduling(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
 
-    Process* copyRQ = copyProcesses(processes, n);
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
+    Process* currentProcess = NULL;
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+    
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
 
     // ================================================================
     // │                          Scheduling                          │  
     // ================================================================
 
-    while (n > 0) {
-        // [SJI] 현재 실행 가능한 프로세스 중 가장 짧은 burst time을 찾는 과정은 동일하다
-        int shortestJobIndex = -1;
-        for (int j = 0; j < n; j++) {
-            if (copyRQ[j].arrivalTime <= timeUnit) {
-                if (shortestJobIndex == -1) {
-                    shortestJobIndex = j;
-                } else if (copyRQ[j].cpuBurstTime < copyRQ[shortestJobIndex].cpuBurstTime) {
-                    shortestJobIndex = j;
-                } else if (copyRQ[j].cpuBurstTime == copyRQ[shortestJobIndex].cpuBurstTime && copyRQ[j].arrivalTime < copyRQ[shortestJobIndex].arrivalTime) {
-                    shortestJobIndex = j;
-                }
+    while(n > 0){
+        for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+            if(processesCopy[i].arrivalTime == timeUnit){
+                enqueueSjf(readyQueue, &processesCopy[i]);
             }
         }
 
-        // 실행 가능한 프로세스가 없다면 idle 기입
-        if (shortestJobIndex == -1) {
-            ++timeUnit;
-            enqueueGanttQueue(&queue, -1, timeUnit - 1, timeUnit); // CPU is idle
+        if(isEmpty(readyQueue)){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
             continue;
         }
 
-        Process nextProcess = copyRQ[shortestJobIndex];
-        // non preemtive sjf와 다르게, burst time 전부 처리하는 것이 아닌, 1 time unit만큼만 처리
-        enqueueGanttQueue(&queue, nextProcess.pid, timeUnit, timeUnit + 1);
-        // 레디큐 릴리즈 대신 1 time unit만큼 burst time 감소
-        copyRQ[shortestJobIndex].cpuBurstTime--;
-        // burst time이 0이 되었다면 레디큐에서 릴리즈
-        if (copyRQ[shortestJobIndex].cpuBurstTime == 0) {
-            removeProcessByIndex(copyRQ, &n, shortestJobIndex);
+        Process* runProcess = peek(readyQueue);
+
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeue(readyQueue);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
         }
-        // preemption 발생 확인은 매초 한다
+
+        if(currentProcess != NULL && runProcess->cpuBurstTime < currentProcess->cpuBurstTime){
+            reorderProcess(readyQueue, currentProcess, 1);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        currentProcess = runProcess;
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            dequeue(readyQueue);
+            n--;
+        }
+
         timeUnit++;
     }
 
-    printGanttChart(queue);
-    free(queue);
-    free(copyRQ);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
 }
 
 void priorityScheduling(Process* processes) {
@@ -180,51 +231,77 @@ void priorityScheduling(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
 
-    Process* copyRQ = copyProcesses(processes, n);
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
+
+    for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+        enqueuePriority(readyQueue, &processesCopy[i]);
+    }
+
+    Process* runProcess = NULL;
+
+    int deactivatePreeemptionCounter = 0;
 
     // ================================================================
     // │                          Scheduling                          │  
     // ================================================================
 
-    while (n > 0) {
-        // [HPI] 가장 높은 (수치로 낮은) priority를 가진 프로세스의 인덱스; -1일 경우 실행 가능한 프로세스가 없다
-        int highestPriorityIndex = -1;
-        for (int j = 0; j < n; j++) {
-            if (copyRQ[j].arrivalTime <= timeUnit) {
-                if (highestPriorityIndex == -1) {
-                    highestPriorityIndex = j;
-                    // priority가 더 높은 프로세스 
-                } else if (copyRQ[j].priority < copyRQ[highestPriorityIndex].priority) {
-                    highestPriorityIndex = j;
-                    // 동일한 priority의 경우 arrival time으로 비교
-                } else if (copyRQ[j].priority == copyRQ[highestPriorityIndex].priority && copyRQ[j].arrivalTime < copyRQ[highestPriorityIndex].arrivalTime) {
-                    highestPriorityIndex = j;
+    
+     while(n > 0){
+        Node* currentNode;
+
+        if(!deactivatePreeemptionCounter){
+            for(currentNode = readyQueue -> front; currentNode != NULL; currentNode = currentNode -> next){
+                if (currentNode -> process -> arrivalTime <= timeUnit){
+                    runProcess = currentNode -> process;
+                    break;
                 }
             }
         }
 
-        // 실행 가능한 프로세스가 없다면 idle 기입
-        if (highestPriorityIndex == -1) {
-            ++timeUnit;
-            enqueueGanttQueue(&queue, -1, timeUnit - 1, timeUnit); // CPU is idle
+        if(runProcess == NULL){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
             continue;
         }
 
-        Process nextProcess = copyRQ[highestPriorityIndex];
-        int startTime = timeUnit;
-        // non preemptive이므로, burst time만큼 방해 없이 실행
-        int endTime = startTime + nextProcess.cpuBurstTime;
-        enqueueGanttQueue(&queue, nextProcess.pid, startTime, endTime);
-        timeUnit = endTime;
+        if(deactivatePreeemptionCounter == 0){
+            deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+        }else{
+            deactivatePreeemptionCounter--;
+        }
 
-        removeProcessByIndex(copyRQ, &n, highestPriorityIndex);
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeue(readyQueue);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            dequeueByPid(readyQueue, runProcess->pid);
+            n--;
+        }
+
+        timeUnit++;
     }
 
-    printGanttChart(queue);
-    free(queue);
-    free(copyRQ);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
 }
 
 void preemptivePriorityScheduling(Process* processes) {
@@ -235,56 +312,65 @@ void preemptivePriorityScheduling(Process* processes) {
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
 
-    Process* copyRQ = copyProcesses(processes, n);
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
+    Process* currentProcess = NULL;
+    Process* processesCopy = copyProcesses(processes, n);
+
+    Queue* readyQueue = createQueue();
+    Queue* waitingQueue = createQueue();
+
+    GanttProcess *ganttQueue = NULL;
+    int queueCount = 0;
 
     // ================================================================
     // │                          Scheduling                          │  
     // ================================================================
 
-    while (n > 0) {
-        int highestPriorityIndex = -1;
-        for (int j = 0; j < n; j++) {
-            if (copyRQ[j].arrivalTime <= timeUnit) {
-                if (highestPriorityIndex == -1) {
-                    highestPriorityIndex = j;
-                } else if (copyRQ[j].priority < copyRQ[highestPriorityIndex].priority) {
-                    highestPriorityIndex = j;
-                } else if (copyRQ[j].priority == copyRQ[highestPriorityIndex].priority && copyRQ[j].arrivalTime < copyRQ[highestPriorityIndex].arrivalTime) {
-                    highestPriorityIndex = j;
-                }
+    while(n > 0){
+        for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
+            if(processesCopy[i].arrivalTime == timeUnit){
+                enqueuePriority(readyQueue, &processesCopy[i]);
             }
         }
 
-        if (highestPriorityIndex == -1) {
-            ++timeUnit;
-            enqueueGanttQueue(&queue, -1, timeUnit - 1, timeUnit); // CPU is idle
+        if(isEmpty(readyQueue)){
+            enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+            executeWaitingQueue(waitingQueue, readyQueue);
+            timeUnit++;
             continue;
         }
 
-        Process nextProcess = copyRQ[highestPriorityIndex];
-        // preemptive이므로 1 time unit만큼만 처리
-        enqueueGanttQueue(&queue, nextProcess.pid, timeUnit, timeUnit + 1);
-        copyRQ[highestPriorityIndex].cpuBurstTime--;
-        if (copyRQ[highestPriorityIndex].cpuBurstTime == 0) {
-            removeProcessByIndex(copyRQ, &n, highestPriorityIndex);
+        Process* runProcess = peek(readyQueue);
+
+        if(runProcess->ioTime == 0){
+            runProcess->ioTime--;
+            dequeue(readyQueue);
+            enqueue(waitingQueue, runProcess);
+            runProcess = peek(readyQueue);
+        }
+
+        if(currentProcess != NULL && runProcess->priority < currentProcess->priority){
+            reorderProcess(readyQueue, currentProcess, 2);
+        }
+
+        executeWaitingQueue(waitingQueue, readyQueue);
+
+        currentProcess = runProcess;
+
+        enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
+        runProcess->cpuBurstTime--;
+        runProcess->ioTime--;
+
+        if (runProcess->cpuBurstTime == 0) {
+            dequeue(readyQueue);
+            n--;
         }
 
         timeUnit++;
     }
 
-    printGanttChart(queue);
-    free(queue);
-    free(copyRQ);
+    printGanttChart(ganttQueue, queueCount);
+    freeQueue(readyQueue);
+    freeQueue(waitingQueue);
+    free(ganttQueue);
 }
 
-void roundRobinScheduling(Process* processes, int timeQuantum) {
-    int n = GLOBAL__PROCESS_COUNT;
-    int timeUnit = 0;
-
-    Process* copyRQ = copyProcesses(processes, n);
-    GanttQueue *queue = malloc(sizeof(GanttQueue) + n * sizeof(PIDandTAIL));
-    queue->count = 0;
-    
-}

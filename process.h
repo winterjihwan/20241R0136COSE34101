@@ -12,8 +12,10 @@ typedef struct {
     int pid;            
     int cpuBurstTime;   
     int ioBurstTime;    
+    int ioTime;
     int arrivalTime;    
-    int priority;       
+    int priority;
+    int completionTime;   
 } Process;
 
 

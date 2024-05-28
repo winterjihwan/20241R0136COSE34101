@@ -32,23 +32,21 @@ int main() {
     //     return 1;
     // }
 
-    sortProcessesByArrivalTime(processes);
-    
+
     processes = createDebugProcesses();
     printProcesses(processes);
+    sortProcessesByArrivalTime(processes);
 
     printf("FCFS Scheduling\n");
     fcfsScheduling(processes);
-    // printf("SJF Scheduling\n");
-    // sjfScheduling(processes);
-    // printf("Preemptive SJF Scheduling\n");
-    // preemptiveSjfScheduling(processes);
-    // printf("Priority Scheduling\n");
-    // priorityScheduling(processes);
-    // printf("Preemptive Priority Scheduling\n");
-    // preemptivePriorityScheduling(processes);
-    printf("Round Robin Scheduling\n");
-    roundRobinScheduling(processes, 3);
+    printf("SJF Scheduling\n");
+    sjfScheduling(processes);
+    printf("Preemptive SJF Scheduling\n");
+    preemptiveSjfScheduling(processes);
+    printf("Priority Scheduling\n");
+    priorityScheduling(processes);
+    printf("Preemptive Priority Scheduling\n");
+    preemptivePriorityScheduling(processes);
 
     free(processes);
     return 0;

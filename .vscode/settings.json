@@ -62,6 +62,8 @@
     "scheduling.h": "c",
     "stdbool.h": "c",
     "gannt.h": "c",
-    "gantt.h": "c"
+    "gantt.h": "c",
+    "stdlib.h": "c",
+    "process.h": "c"
   }
 }

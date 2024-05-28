@@ -5,14 +5,10 @@ typedef struct {
     int pid;
     int startTime;
     int endTime;
-} PIDandTAIL;
+} GanttProcess;
 
-typedef struct {
-    int count;
-    PIDandTAIL ganntQueuePIDS[];
-} GanttQueue;
 
-void enqueueGanttQueue(GanttQueue **queue, int pid, int startTime, int endTime);
-void printGanttChart(GanttQueue *queue);
+void enqueueGanttProcess(GanttProcess **queue, int *count, int pid, int startTime, int endTime);
+void printGanttChart(GanttProcess *queue, int count);
 
 #endif // GANTT_H
