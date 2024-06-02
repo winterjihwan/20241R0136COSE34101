@@ -147,7 +147,7 @@ Process* createDebugProcesses() {
     processes[2].cpuBurstTime = 8;
     processes[2].priority = 3;
     processes[2].ioBurstTime = 5;
-    processes[2].ioTime = -1;
+    processes[2].ioTime = 2;
     processes[2].waitingTime = 0;
 
 

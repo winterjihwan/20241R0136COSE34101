@@ -17,25 +17,27 @@ int main() {
     // 랜덤 시드값 (현재 시간으로)
     srand(time(NULL));
 
-    int choice;
-    printf("Choose process creation method:\n");
-    printf("1. Random\n");
-    printf("2. Custom\n");
-    printf("3. Debug\n");
-    printf("Enter your choice: ");
-    scanf("%d", &choice);
+    // int choice;
+    // printf("Choose process creation method:\n");
+    // printf("1. Random\n");
+    // printf("2. Custom\n");
+    // printf("3. Debug\n");
+    // printf("Enter your choice: ");
+    // scanf("%d", &choice);
 
-    Process* processes;
-    if (choice == 1) {
-        processes = createProcesses();
-    } else if (choice == 2) {
-        processes = createCustomProcesses();
-    } else if (choice == 3) {
-        processes = createDebugProcesses();
-    } else {
-        printf("Invalid choice.\n");
-        return 1;
-    }
+    // Process* processes;
+    // if (choice == 1) {
+    //     processes = createProcesses();
+    // } else if (choice == 2) {
+    //     processes = createCustomProcesses();
+    // } else if (choice == 3) {
+    //     processes = createDebugProcesses();
+    // } else {
+    //     printf("Invalid choice.\n");
+    //     return 1;
+    // }
+
+    Process* processes = createDebugProcesses();
 
     sortProcessesByArrivalTime(processes);
 
