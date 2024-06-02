@@ -1,5 +1,23 @@
 #include <stdio.h>
 #include "evaluate.h"
+#include "scheduling.h"
+
+void evaluateAll(Process *processes) {
+    printf("FCFS Scheduling\n");
+    fcfsScheduling(processes);
+    printf("SJF Scheduling\n");
+    sjfScheduling(processes);
+    printf("Preemptive SJF Scheduling\n");
+    preemptiveSjfScheduling(processes);
+    printf("Priority Scheduling\n");
+    priorityScheduling(processes);
+    printf("Preemptive Priority Scheduling\n");
+    preemptivePriorityScheduling(processes);
+    printf("Round Robin Scheduling\n");
+    roundRobinScheduling(processes, 3);
+    printf("HRRN Scheduling\n");
+    hrrnScheduling(processes);
+}
 
 void evaluate(Process *processes, Process *processesCopy, int processCount) {
     int totalTurnaroundTime = 0;

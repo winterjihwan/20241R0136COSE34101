@@ -264,12 +264,9 @@ Process* highestResponseRatio(Queue* queue, int currentTime) {
     double highestResponseRatio = -1.0;
 
     while (current != NULL) {
-        printf("--------------------------\n");
         if (current->process->arrivalTime <= currentTime) {
             int waitingTime = currentTime - current->process->arrivalTime;
             double responseRatio = ((double)(waitingTime + current->process->cpuBurstTime)) / current->process->cpuBurstTime;
-
-            printf("Time unit: %d, PID: %d, Response Ratio: %f\n", currentTime, current->process->pid, responseRatio);
 
             if (highestRRProcess == NULL || responseRatio > highestResponseRatio) {
                 highestResponseRatio = responseRatio;

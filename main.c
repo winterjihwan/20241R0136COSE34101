@@ -17,40 +17,28 @@ int main() {
     srand(time(NULL));
 
     int choice;
-    // printf("Choose process creation method:\n");
-    // printf("1. Random\n");
-    // printf("2. Custom\n");
-    // printf("Enter your choice: ");
-    // scanf("%d", &choice);
+    printf("Choose process creation method:\n");
+    printf("1. Random\n");
+    printf("2. Custom\n");
+    printf("3. Debug\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
 
     Process* processes;
-    // if (choice == 1) {
-    //     processes = createProcesses();
-    // } else if (choice == 2) {
-    //     processes = createCustomProcesses();
-    // } else {
-    //     printf("Invalid choice.\n");
-    //     return 1;
-    // }
+    if (choice == 1) {
+        processes = createProcesses();
+    } else if (choice == 2) {
+        processes = createCustomProcesses();
+    } else if (choice == 3) {
+        processes = createDebugProcesses();
+    } else {
+        printf("Invalid choice.\n");
+        return 1;
+    }
 
-    processes = createDebugProcesses();
-    // printProcesses(processes);
     sortProcessesByArrivalTime(processes);
 
-    // printf("FCFS Scheduling\n");
-    // fcfsScheduling(processes);
-    // printf("SJF Scheduling\n");
-    // sjfScheduling(processes);
-    // printf("Preemptive SJF Scheduling\n");
-    // preemptiveSjfScheduling(processes);
-    // printf("Priority Scheduling\n");
-    // priorityScheduling(processes);
-    // printf("Preemptive Priority Scheduling\n");
-    // preemptivePriorityScheduling(processes);
-    // printf("Round Robin Scheduling\n");
-    // roundRobinScheduling(processes, 3);
-    printf("HRRN Scheduling\n");
-    hrrnScheduling(processes);
+    evaluateAll(processes);
 
     free(processes);
     return 0;

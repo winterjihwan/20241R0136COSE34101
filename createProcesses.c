@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+// O(n^2)
 int randomPid(int usedPids[], int count) {
     int pid;
     bool unique;
@@ -22,9 +23,10 @@ int randomPid(int usedPids[], int count) {
 Process createProcess(int pid) {
     Process p;
     p.pid = pid;
+    p.arrivalTime = rand() % GLOBAL__MAX_ARRIVAL_TIME;        
     p.cpuBurstTime = rand() % GLOBAL__MAX_CPU_BURST_TIME + 1;   
     p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME + 1;     
-    p.arrivalTime = rand() % GLOBAL__MAX_ARRIVAL_TIME;        
+    p.ioTime = (rand() % 3) - 1;
     p.priority = rand() % GLOBAL__MAX_PRIORITY;        
     return p;
 }
@@ -63,6 +65,9 @@ Process* createCustomProcesses() {
 
         printf("I/O Burst Time: ");
         scanf("%d", &processes[i].ioBurstTime);
+
+        printf("I/O Time: ");
+        scanf("%d", &processes[i].ioTime);
 
         printf("Arrival Time: ");
         scanf("%d", &processes[i].arrivalTime);

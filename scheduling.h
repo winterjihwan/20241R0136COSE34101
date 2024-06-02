@@ -10,5 +10,6 @@ void priorityScheduling(Process* processes);
 void preemptivePriorityScheduling(Process* processes);
 void roundRobinScheduling(Process* processes, int quantum);
 void hrrnScheduling(Process* processes);
+void edfScheduling(Process* processes);
 
 #endif // SCHEDULING_H
