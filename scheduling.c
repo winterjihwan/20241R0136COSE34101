@@ -80,7 +80,7 @@ void fcfsScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "FCFS");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -176,7 +176,7 @@ void sjfScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "SJF");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -271,7 +271,7 @@ void preemptiveSjfScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "P-SJF");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -361,7 +361,7 @@ void priorityScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "Priority");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -441,7 +441,7 @@ void preemptivePriorityScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "P-Priority");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -534,7 +534,7 @@ void roundRobinScheduling(Process* processes, int quantum){
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "RR");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -614,7 +614,7 @@ void hrrnScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "HRRN");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);
@@ -694,7 +694,7 @@ void edfScheduling(Process* processes) {
         timeUnit++;
     }
 
-    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT);
+    evaluate(processes, processesCopy, GLOBAL__PROCESS_COUNT, "EDF");
     printGanttChart(ganttQueue, queueCount);
     freeQueue(readyQueue);
     freeQueue(waitingQueue);

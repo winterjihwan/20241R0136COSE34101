@@ -1,6 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 #include "evaluate.h"
 #include "scheduling.h"
+
+float lowestTurnaroundTime = 9999999;
+float lowestWaitingTime = 9999999;
+char lowestTurnaroundTimeAlgorithm[10];
+char lowestWaitingTimeAlgorithm[10];
 
 void evaluateAll(Process *processes) {
     printf("FCFS Scheduling\n");
@@ -17,9 +23,12 @@ void evaluateAll(Process *processes) {
     roundRobinScheduling(processes, 3);
     printf("HRRN Scheduling\n");
     hrrnScheduling(processes);
+
+    printf("Lowest Turnaround Time: %.2f by %s\n", lowestTurnaroundTime, lowestTurnaroundTimeAlgorithm);
+    printf("Lowest Waiting Time: %.2f by %s\n", lowestWaitingTime, lowestWaitingTimeAlgorithm);
 }
 
-void evaluate(Process *processes, Process *processesCopy, int processCount) {
+void evaluate(Process *processes, Process *processesCopy, int processCount, char algorithm[10]) {
     int totalTurnaroundTime = 0;
     int totalWaitingTime = 0;
 
@@ -49,4 +58,13 @@ void evaluate(Process *processes, Process *processesCopy, int processCount) {
     printf("|------------------------------------------------------------------------------------------------------------------------|\n");
     printf("Average Turnaround Time = %.2f\n", (float)totalTurnaroundTime / processCount);
     printf("Average Waiting Time = %.2f\n", (float)totalWaitingTime / processCount);
+
+    if((float)totalTurnaroundTime / processCount < lowestTurnaroundTime) {
+        lowestTurnaroundTime = (float)totalTurnaroundTime / processCount;
+        strcpy(lowestTurnaroundTimeAlgorithm, algorithm);
+    }
+    if((float)totalWaitingTime / processCount < lowestWaitingTime) {
+        lowestWaitingTime = (float)totalWaitingTime / processCount;
+        strcpy(lowestWaitingTimeAlgorithm, algorithm);
+    }
 }
