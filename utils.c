@@ -49,6 +49,7 @@ Process* copyProcesses(Process* original, int n) {
 }
 
 // 프로세스 index로 삭제
+// Deprecated
 void removeProcessByIndex(Process* processes, int* n, int index) {
     // [0, 3, 6, 9] 배열의 1번 인덱스 삭제 -> [0, 6, 9, 9]
     // index 이후의 모든 프로세스를 한 칸씩 앞으로 당기고 n을 1 감소시킨다

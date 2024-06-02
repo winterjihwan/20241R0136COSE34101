@@ -43,7 +43,7 @@ void fcfsScheduling(Process* processes) {
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             // running queue는 empty여도 waiting queue에 있는 프로세스들은 -1초 처리
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 0);
             timeUnit++;
             continue;
         }
@@ -63,7 +63,7 @@ void fcfsScheduling(Process* processes) {
         }
 
         // waiting queue 전부 -1초 처리, I/O completion시 waiting queue -> ready queue
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 0);
 
         // 간트차트 출력을 위해 실행 기록 기입
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
@@ -135,7 +135,7 @@ void sjfScheduling(Process* processes) {
         // 실행 가능한 프로세스 X, idle 처리
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 1);
             timeUnit++;
             continue;
         }
@@ -156,7 +156,7 @@ void sjfScheduling(Process* processes) {
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 1);
 
         // 간트차트 처리
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
@@ -183,6 +183,7 @@ void sjfScheduling(Process* processes) {
     free(ganttQueue);
 }
 
+// 작은 프라이오리티 값이 높은 우선순위를 가진다
 void preemptiveSjfScheduling(Process* processes) {
     // ================================================================
     // │                            Setup                             │
@@ -215,7 +216,7 @@ void preemptiveSjfScheduling(Process* processes) {
         // 실행 가능한 프로세스 X, idle 처리
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 1);
             timeUnit++;
             continue;
         }
@@ -250,7 +251,7 @@ void preemptiveSjfScheduling(Process* processes) {
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 1);
 
         // 이전 프로세스를 현재 프로세스로 할당
         currentProcess = runProcess;
@@ -322,7 +323,7 @@ void priorityScheduling(Process* processes) {
         // 실행 가능한 프로세스 X, idle 처리
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 2);
             timeUnit++;
             continue;
         }
@@ -343,7 +344,7 @@ void priorityScheduling(Process* processes) {
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 2);
 
         // 간트차트 처리
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
@@ -399,7 +400,7 @@ void preemptivePriorityScheduling(Process* processes) {
         // 실행 가능한 프로세스 X, idle 처리
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 2);
             timeUnit++;
             continue;
         }
@@ -421,7 +422,7 @@ void preemptivePriorityScheduling(Process* processes) {
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 2);
 
         currentProcess = runProcess;
 
@@ -484,7 +485,7 @@ void roundRobinScheduling(Process* processes, int quantum){
         // 실행 가능한 프로세스 X, idle 처리
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 0);
             timeUnit++;
             continue;
         }
@@ -528,7 +529,7 @@ void roundRobinScheduling(Process* processes, int quantum){
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 0);
 
         timeUnit++;
     }
@@ -582,7 +583,7 @@ void hrrnScheduling(Process* processes) {
         // 실행 가능한 프로세스 X, idle 처리
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 0);
             timeUnit++;
             continue;
         }
@@ -596,7 +597,7 @@ void hrrnScheduling(Process* processes) {
         }
 
         // Waiting queue 처리
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 0);
 
         // 간트차트 처리
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
@@ -649,7 +650,7 @@ void edfScheduling(Process* processes) {
 
         if (isEmpty(readyQueue)) {
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            executeWaitingQueue(waitingQueue, readyQueue);
+            executeWaitingQueue(waitingQueue, readyQueue, 0);
             timeUnit++;
             continue;
         }
@@ -671,7 +672,7 @@ void edfScheduling(Process* processes) {
             continue;
         }
 
-        executeWaitingQueue(waitingQueue, readyQueue);
+        executeWaitingQueue(waitingQueue, readyQueue, 0);
 
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;

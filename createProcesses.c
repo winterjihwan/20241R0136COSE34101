@@ -26,7 +26,6 @@ Process createProcess(int pid) {
     p.arrivalTime = rand() % GLOBAL__MAX_ARRIVAL_TIME;        
     p.cpuBurstTime = rand() % GLOBAL__MAX_CPU_BURST_TIME + 1;   
     p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME + 1;     
-    p.ioTime = (rand() % 3) - 1;
     p.priority = rand() % GLOBAL__MAX_PRIORITY;        
     return p;
 }

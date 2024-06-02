@@ -13,6 +13,7 @@ void enqueue(Queue* queue, Process* process) {
     newNode->process = process;
     newNode->next = NULL;
 
+    // 큐가 비어있다면
     if (queue->rear == NULL) {
         queue->front = queue->rear = newNode;
         return;
@@ -27,6 +28,7 @@ void enqueuePriority(Queue* queue, Process* process) {
     newNode->process = process;
     newNode->next = NULL;
 
+    // 큐가 비어있거나 front 프로세스 preemption
     if (queue->front == NULL || queue->front->process->priority > process->priority) {
         newNode->next = queue->front;
         queue->front = newNode;
@@ -37,6 +39,8 @@ void enqueuePriority(Queue* queue, Process* process) {
     }
 
     Node* current = queue->front;
+    // while 루프가 끝나면 current -> next는 프로세스 우선순위가 더 낮은 프로세스를 가리킴
+    // 즉, 동일한 프라이오리티를 가진 프소세스 중 맨 뒤에 위치하게 된다
     while (current->next != NULL && current->next->process->priority <= process->priority) {
         current = current->next;
     }
@@ -84,6 +88,7 @@ Process* dequeue(Queue* queue) {
     Node* temp = queue->front;
     Process* process = temp->process;
     queue->front = queue->front->next;
+    // 큐가 비어있다
     if (queue->front == NULL) {
         queue->rear = NULL;
     }
@@ -100,9 +105,11 @@ Process* peek(Queue* queue) {
         printf("Queue is empty\n");
         return NULL;
     }
+    // 디큐하지 않음
     return queue->front->process;
 }
 
+// 동일한 우선순위 시 (priority, cpuBurstTime) 프로세스를 뒤로 재배치
 void reorderProcess(Queue* queue, Process* process, int schedulingType) {
     if (queue->front == NULL) {
         printf("Queue is empty\n");
@@ -111,6 +118,7 @@ void reorderProcess(Queue* queue, Process* process, int schedulingType) {
 
     Node* current = queue->front;
     Node* previous = NULL;
+    // 프로세스 위치 탐색
     while (current != NULL && current->process != process) {
         previous = current;
         current = current->next;
@@ -120,7 +128,8 @@ void reorderProcess(Queue* queue, Process* process, int schedulingType) {
         printf("Process not found in the queue\n");
         return;
     }
-
+    
+    // 지우고자 하는 프로세스가 맨 앞
     if (previous == NULL) { 
         queue->front = current->next;
     } else {
@@ -133,6 +142,7 @@ void reorderProcess(Queue* queue, Process* process, int schedulingType) {
 
     free(current);
 
+    // 각자 방식으로 재배치
     if (schedulingType == 1) {
         enqueueSjf(queue, process);
     } else if (schedulingType == 2){
@@ -149,19 +159,22 @@ void freeQueue(Queue* queue) {
     free(queue);
 }
 
-
-void executeWaitingQueue(Queue* waitingQueue, Queue* readyQueue) {
+// 웨이팅 큐에 있는 프로세스 ioBurstTime을 모두 -1씩 감소
+void executeWaitingQueue(Queue* waitingQueue, Queue* readyQueue, int schedulingType) {
     Node* prev = NULL;
     Node* current = waitingQueue->front;
     while (current != NULL) {
         current->process->ioBurstTime--;
         
+        // ioBurstTime이 0이 되면 readyQueue로 이동
         if (current->process->ioBurstTime == 0) {
+            // 맨앞
             if (prev == NULL) { 
                 waitingQueue->front = current->next;
-            } else {
+            } else { // 중간
                 prev->next = current->next;
             }
+            // 맨뒤
             if (current->next == NULL) { 
                 waitingQueue->rear = prev;
             }
@@ -169,7 +182,13 @@ void executeWaitingQueue(Queue* waitingQueue, Queue* readyQueue) {
             Node* temp = current;
             current = current->next;
             free(temp);
-            enqueuePriority(readyQueue, readyProcess);
+            if(schedulingType == 0){
+                enqueue(readyQueue, readyProcess);
+            } else if(schedulingType == 1){
+                enqueueSjf(readyQueue, readyProcess);
+            } else if(schedulingType == 2){
+                enqueuePriority(readyQueue, readyProcess);
+            }
         } else {
             prev = current;
             current = current->next;
@@ -177,26 +196,8 @@ void executeWaitingQueue(Queue* waitingQueue, Queue* readyQueue) {
     }
 }
 
-void reorderReadyQueue(Queue* queue) {
-    if (queue->front == NULL || queue->front->next == NULL) {
-        return;
-    }
 
-    Node* current = queue->front;
-    while (current != NULL) {
-        Node* nextNode = current->next;
-        while (nextNode != NULL) {
-            if (current->process->arrivalTime == nextNode->process->arrivalTime && current->process->priority > nextNode->process->priority) {
-                Process* temp = current->process;
-                current->process = nextNode->process;
-                nextNode->process = temp;
-            }
-            nextNode = nextNode->next;
-        }
-        current = current->next;
-    }
-}
-
+// 디버깅 목적
 void printQueue(Queue* queue) {
     Node* current = queue->front;
     while (current != NULL) {
@@ -205,17 +206,6 @@ void printQueue(Queue* queue) {
                process->pid, process->arrivalTime, process->priority, process->cpuBurstTime, process->ioBurstTime);
         current = current->next;
     }
-}
-
-Process* findProcessByArrivalTime(Queue* queue, int timeUnit) {
-    Node* current = queue->front;
-    while (current != NULL) {
-        if (current->process->arrivalTime == timeUnit) {
-            return current->process;
-        }
-        current = current->next;
-    }
-    return NULL;
 }
 
 
@@ -238,6 +228,7 @@ Process* dequeueByPid(Queue* queue, int pid) {
         return NULL;
     }
 
+    // 지우고자 하는 프로세스가 맨 앞
     if (previous == NULL) { 
         queue->front = current->next;
     } else {
@@ -266,8 +257,10 @@ Process* highestResponseRatio(Queue* queue, int currentTime) {
     while (current != NULL) {
         if (current->process->arrivalTime <= currentTime) {
             int waitingTime = currentTime - current->process->arrivalTime;
+            // rr = (waitingTime + cpuBurstTime) / cpuBurstTime
             double responseRatio = ((double)(waitingTime + current->process->cpuBurstTime)) / current->process->cpuBurstTime;
 
+            // 더 높은 RR을 가진 프로세스를 찾음
             if (highestRRProcess == NULL || responseRatio > highestResponseRatio) {
                 highestResponseRatio = responseRatio;
                 highestRRProcess = current->process;

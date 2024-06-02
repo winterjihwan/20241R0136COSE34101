@@ -14,6 +14,7 @@ int GLOBAL__MAX_PRIORITY = 20;
 int GLOBAL__PROCESS_COUNT = 5;
 
 int main() {
+    // 랜덤 시드값 (현재 시간으로)
     srand(time(NULL));
 
     int choice;
