@@ -8,19 +8,42 @@ float lowestWaitingTime = 9999999;
 char lowestTurnaroundTimeAlgorithm[10];
 char lowestWaitingTimeAlgorithm[10];
 
+int enter;
+
 void evaluateAll(Process *processes) {
+    lowestTurnaroundTime = 9999999;
+    lowestWaitingTime = 9999999;
+
     printf("FCFS Scheduling\n");
     fcfsScheduling(processes);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("SJF Scheduling\n");
     sjfScheduling(processes);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("Preemptive SJF Scheduling\n");
     preemptiveSjfScheduling(processes);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("Priority Scheduling\n");
     priorityScheduling(processes);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("Preemptive Priority Scheduling\n");
     preemptivePriorityScheduling(processes);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("Round Robin Scheduling\n");
     roundRobinScheduling(processes, 3);
+    printf("Press 1 to continue\n");
+    scanf("%d", &enter);
+
     printf("HRRN Scheduling\n");
     hrrnScheduling(processes);
 
