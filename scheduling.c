@@ -59,7 +59,16 @@ void fcfsScheduling(Process* processes) {
             dequeue(readyQueue);
             enqueue(waitingQueue, runProcess);
             // 같은 타임 유닛 내에서 다음 프로세스 실행
-            runProcess = peek(readyQueue);
+            // 다음 프로세스가 없을 경우 continue
+            if (!isEmpty(readyQueue)) {
+                runProcess = peek(readyQueue);
+            } else {
+                enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+                executeWaitingQueue(waitingQueue, readyQueue, 0);
+                runProcess = NULL;
+                timeUnit++;
+                continue;
+            }
         }
 
         // waiting queue 전부 -1초 처리, I/O completion시 waiting queue -> ready queue
@@ -556,6 +565,9 @@ void roundRobinScheduling(Process* processes, int quantum){
             }
         }
 
+        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
+        currentProcess = peek(readyQueue);
+
         // 실행 가능한 프로세스 X, idle 처리
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
@@ -564,10 +576,6 @@ void roundRobinScheduling(Process* processes, int quantum){
             continue;
         }
         
-        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
-        currentProcess = peek(readyQueue);
-
-        
         // quantumCounter: 프로세스가 할당 받은 시간 동안에는 방해받지 않는다, non preemptive
         if (!quantumCounter) {
             dequeue(readyQueue);
@@ -575,6 +583,7 @@ void roundRobinScheduling(Process* processes, int quantum){
             if(currentProcess->cpuBurstTime == 0){
                 currentProcess->completionTime = timeUnit;
                 n--;
+                currentProcess = NULL;
                 // dequeue()를 여기서 하기에 스케쥴링 종료도 여기서 해주어야 한다
                 // n: 살아있는 프로세스 개수
                 if(n==0){
@@ -585,7 +594,15 @@ void roundRobinScheduling(Process* processes, int quantum){
             }
 
             // 다음 프로세스 실행
-            currentProcess = peek(readyQueue);
+            if (!isEmpty(readyQueue)) {
+                currentProcess = peek(readyQueue);
+            } else {
+                enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
+                executeWaitingQueue(waitingQueue, readyQueue, 0);
+                currentProcess = NULL;
+                timeUnit++;
+                continue;
+            }
             
             // 남은 burst time이 타임 퀀텀보다 작은 경우
             runTime = (currentProcess->cpuBurstTime < quantum) ? currentProcess->cpuBurstTime : quantum;
@@ -601,6 +618,7 @@ void roundRobinScheduling(Process* processes, int quantum){
 
         // I/O 처리
         if (currentProcess->ioTime == 0) {
+            dequeue(readyQueue);
             enqueue(waitingQueue, currentProcess);
             quantumCounter = 0;
         }

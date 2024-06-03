@@ -25,7 +25,8 @@ Process createProcess(int pid) {
     p.pid = pid;
     p.arrivalTime = rand() % GLOBAL__MAX_ARRIVAL_TIME;        
     p.cpuBurstTime = rand() % GLOBAL__MAX_CPU_BURST_TIME + 1;   
-    p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME + 1;     
+    // p.ioBurstTime = rand() % GLOBAL__MAX_IO_BURST_TIME + 1; 
+    // p.ioTime = rand() % p.cpuBurstTime - 1;    
     p.priority = rand() % GLOBAL__MAX_PRIORITY;        
     return p;
 }
@@ -88,6 +89,7 @@ Process* createDebugProcesses() {
         exit(1);
     }
 
+    // ex 1
     // processes[0].pid = 1;
     // processes[0].arrivalTime = 3;
     // processes[0].cpuBurstTime = 10;
@@ -127,24 +129,64 @@ Process* createDebugProcesses() {
     // processes[4].ioTime = -1;
     // processes[4].waitingTime = 0;
 
+    // ex 2
+    // processes[0].pid = 1;
+    // processes[0].arrivalTime = 1;
+    // processes[0].cpuBurstTime = 6;
+    // processes[0].priority = 3;
+    // processes[0].ioTime = -1;
+    // processes[0].waitingTime = 0;
+
+    // processes[1].pid = 2;
+    // processes[1].arrivalTime = 3;
+    // processes[1].cpuBurstTime = 2;
+    // processes[1].priority = 1;
+    // processes[1].ioTime = -1;
+    // processes[1].waitingTime = 0;
+
+
+    // processes[2].pid = 3;
+    // processes[2].arrivalTime = 2;
+    // processes[2].cpuBurstTime = 5;
+    // processes[2].priority = 1;
+    // processes[2].ioBurstTime = 5;
+    // processes[2].ioTime = 2;
+    // processes[2].waitingTime = 0;
+
+
+    // processes[3].pid = 4;
+    // processes[3].arrivalTime = 14;
+    // processes[3].cpuBurstTime = 3;
+    // processes[3].priority = 4;
+    // processes[3].ioTime = -1;
+    // processes[3].waitingTime = 0;
+
+
+    // processes[4].pid = 5;
+    // processes[4].arrivalTime = 15;
+    // processes[4].cpuBurstTime = 3;
+    // processes[4].priority = 5;
+    // processes[4].ioTime = -1;
+    // processes[4].waitingTime = 0;
+
     processes[0].pid = 1;
-    processes[0].arrivalTime = 1;
-    processes[0].cpuBurstTime = 6;
+    processes[0].arrivalTime = 0;
+    processes[0].cpuBurstTime = 7;
     processes[0].priority = 3;
     processes[0].ioTime = -1;
     processes[0].waitingTime = 0;
 
     processes[1].pid = 2;
-    processes[1].arrivalTime = 3;
-    processes[1].cpuBurstTime = 2;
+    processes[1].arrivalTime = 11;
+    processes[1].cpuBurstTime = 14;
     processes[1].priority = 1;
     processes[1].ioTime = -1;
     processes[1].waitingTime = 0;
 
 
     processes[2].pid = 3;
-    processes[2].arrivalTime = 2;
-    processes[2].cpuBurstTime = 5;
+    processes[2].arrivalTime = 14;
+    processes[2].cpuBurstTime = 14;
     processes[2].priority = 1;
     processes[2].ioBurstTime = 5;
     processes[2].ioTime = 2;
@@ -153,14 +195,14 @@ Process* createDebugProcesses() {
 
     processes[3].pid = 4;
     processes[3].arrivalTime = 14;
-    processes[3].cpuBurstTime = 3;
+    processes[3].cpuBurstTime = 10;
     processes[3].priority = 4;
     processes[3].ioTime = -1;
     processes[3].waitingTime = 0;
 
 
     processes[4].pid = 5;
-    processes[4].arrivalTime = 15;
+    processes[4].arrivalTime = 19;
     processes[4].cpuBurstTime = 3;
     processes[4].priority = 5;
     processes[4].ioTime = -1;

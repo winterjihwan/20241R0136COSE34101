@@ -102,7 +102,7 @@ bool isEmpty(Queue* queue) {
 
 Process* peek(Queue* queue) {
     if (queue->front == NULL) {
-        printf("Queue is empty, peek error\n");
+        // printf("Queue is empty, peek error\n");
         return NULL;
     }
     // 디큐하지 않음
