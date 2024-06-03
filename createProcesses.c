@@ -129,39 +129,39 @@ Process* createDebugProcesses() {
 
     processes[0].pid = 1;
     processes[0].arrivalTime = 1;
-    processes[0].cpuBurstTime = 3;
-    processes[0].priority = 1;
+    processes[0].cpuBurstTime = 6;
+    processes[0].priority = 3;
     processes[0].ioTime = -1;
     processes[0].waitingTime = 0;
 
     processes[1].pid = 2;
     processes[1].arrivalTime = 3;
-    processes[1].cpuBurstTime = 6;
-    processes[1].priority = 2;
+    processes[1].cpuBurstTime = 2;
+    processes[1].priority = 1;
     processes[1].ioTime = -1;
     processes[1].waitingTime = 0;
 
 
     processes[2].pid = 3;
-    processes[2].arrivalTime = 5;
-    processes[2].cpuBurstTime = 8;
-    processes[2].priority = 3;
+    processes[2].arrivalTime = 2;
+    processes[2].cpuBurstTime = 5;
+    processes[2].priority = 1;
     processes[2].ioBurstTime = 5;
     processes[2].ioTime = 2;
     processes[2].waitingTime = 0;
 
 
     processes[3].pid = 4;
-    processes[3].arrivalTime = 7;
-    processes[3].cpuBurstTime = 4;
+    processes[3].arrivalTime = 14;
+    processes[3].cpuBurstTime = 3;
     processes[3].priority = 4;
     processes[3].ioTime = -1;
     processes[3].waitingTime = 0;
 
 
     processes[4].pid = 5;
-    processes[4].arrivalTime = 8;
-    processes[4].cpuBurstTime = 5;
+    processes[4].arrivalTime = 15;
+    processes[4].cpuBurstTime = 3;
     processes[4].priority = 5;
     processes[4].ioTime = -1;
     processes[4].waitingTime = 0;
