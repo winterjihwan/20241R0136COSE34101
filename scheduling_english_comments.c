@@ -12,10 +12,6 @@
  * @param processes 
  */
 void fcfsScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
-
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
 
@@ -27,39 +23,35 @@ void fcfsScheduling(Process* processes) {
     GanttProcess *ganttQueue = NULL;
     int queueCount = 0;
 
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
     while(n > 0){
-        // main.c에서 이미 arrivalTime으로 정렬되어 있다
+        // assumes that processes are sorted by arrival time
         for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
             if(processesCopy[i].arrivalTime == timeUnit){
                 enqueue(readyQueue, &processesCopy[i]);
             }
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // no available process to run, consider idle
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
-            // running queue는 empty여도 waiting queue에 있는 프로세스들은 -1초 처리
+            // although the running queue is empty, the processes in the waiting queue are processed by -1 second
             executeWaitingQueue(waitingQueue, readyQueue, 0);
             timeUnit++;
             continue;
         }
 
-        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
+        // available process to run, run the process at the front of the queue
         Process* runProcess = peek(readyQueue);
 
-        // ioTime은 'Process XX는 3초 실행 후 I/O 2초간 실행' 에서의 3초를 의미한다
+        // ioTime refers to countdown of I/O operation within burst
         if(runProcess->ioTime == 0){
-            // ioTime -1 처리
+            // ioTime -1
             runProcess->ioTime--;
             // running queue -> waiting queue
             dequeue(readyQueue);
             enqueue(waitingQueue, runProcess);
-            // 같은 타임 유닛 내에서 다음 프로세스 실행
-            // 다음 프로세스가 없을 경우 continue
+            // run the next process in the same time unit
+            // if there is no next process, continue
             if (!isEmpty(readyQueue)) {
                 runProcess = peek(readyQueue);
             } else {
@@ -71,15 +63,16 @@ void fcfsScheduling(Process* processes) {
             }
         }
 
-        // waiting queue 전부 -1초 처리, I/O completion시 waiting queue -> ready queue
+        // decrement all processes in the waiting queue by 1 second
+        // move the processes whose I/O is completed waiting queue -> ready queue
         executeWaitingQueue(waitingQueue, readyQueue, 0);
 
-        // 간트차트 출력을 위해 실행 기록 기입
+        // record the execution for Gantt chart display
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료: running queue -> terminated
+        // process termination, dequeue the process from the running queue
         if (runProcess->cpuBurstTime == 0) {
             runProcess->completionTime = timeUnit+1;
             dequeue(readyQueue);
@@ -98,9 +91,6 @@ void fcfsScheduling(Process* processes) {
 
 
 void sjfScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -113,27 +103,23 @@ void sjfScheduling(Process* processes) {
     GanttProcess *ganttQueue = NULL;
     int queueCount = 0;
 
-    // Shortest burst time 순으로 레디큐 기입 (타이브레이커: 도착순)
-    // while문에서 도착 순으로 실행
+    // Enqueue processes in the ready queue sorted by shortest burst time (tiebreaker: arrival time)
+    // Execute in arrival order in the while loop
     for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
         enqueueSjf(readyQueue, &processesCopy[i]);
     }
 
     Process* runProcess = NULL;
-    int deactivatePreeemptionCounter = 0;
-
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
+    int deactivatePreemptionCounter = 0;
     
     while(n > 0 ){
         Node* currentNode;
 
-        // non preemptive SJF이기에 cpuBurstTime이 0이 되기 전까지 preemption deactivate
-        if(!deactivatePreeemptionCounter){
-            // 레디큐 루프
+        // Non-preemptive SJF, deactivate preemption until cpuBurstTime is 0
+        if(!deactivatePreemptionCounter){
+            // Loop through ready queue
             for(currentNode = readyQueue -> front; currentNode != NULL; currentNode = currentNode -> next){
-                // Setup단계에서 이미 burst time 순으로 정렬되어 있기에 도착순으로 실행하면 된다
+                // Since the ready queue is already sorted by burst time in the setup phase, execute in arrival order
                 if (currentNode -> process -> arrivalTime <= timeUnit){
                     runProcess = currentNode -> process;
                     break;
@@ -141,7 +127,7 @@ void sjfScheduling(Process* processes) {
             }
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 1);
@@ -149,28 +135,26 @@ void sjfScheduling(Process* processes) {
             continue;
         }
 
-        if(timeUnit< 50){
+        if(timeUnit < 50){
             // printf("Timeunit: %d, pid: %d\n", timeUnit, runProcess->pid);
         }
 
-        // 프로세스 실행 중
-        if(deactivatePreeemptionCounter == 0){
-            deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
-        }else{
-            deactivatePreeemptionCounter--;
+        // Process is running
+        if(deactivatePreemptionCounter == 0){
+            deactivatePreemptionCounter = runProcess->cpuBurstTime - 1;
+        } else {
+            deactivatePreemptionCounter--;
         }
 
-        // I/O 처리
+        // Handle I/O
         if(runProcess->ioTime == 0){
             runProcess->ioTime--;
             dequeueByPid(readyQueue, runProcess->pid);
             enqueue(waitingQueue, runProcess);
 
-            /**
-             * 레디큐 -> 웨이팅큐로 보내고. 다음 프로세스 실행해야된지만, 현재 실행 가능한 프로세스가 없을때
-             * Ex. RQ = [P3, P4] => Available(RQ) = nil
-             * for loop으로 다음에 실행 가능한 플로세스가 있는지 확인
-             */
+            // Move from ready queue to waiting queue. Execute next process if available.
+            // Ex. RQ = [P3, P4] => Available(RQ) = nil
+            // Check for the next executable process in the for loop
             int isAvailableNext = 0;
             if(!isEmpty(readyQueue)){
                 for(currentNode = readyQueue -> front; currentNode != NULL; currentNode = currentNode -> next){
@@ -182,41 +166,39 @@ void sjfScheduling(Process* processes) {
                 }
             }
             if (!isAvailableNext) {
-                /**
-                 * 방금 들어간 프로세스가 마지막 프로세스이거나 Ex. RQ = [P3] => RQ = []
-                 * 다음 실행 가능한 프로세스가 없을때 Ex. RQ = [P3, P4] => Available(RQ) = nil
-                 * runProcess (현재 실행할 프로세스) = NULL이면 idle 처리
-                 */
+                // The just moved process is the last process Ex. RQ = [P3] => RQ = []
+                // No next executable process Ex. RQ = [P3, P4] => Available(RQ) = nil
+                // If runProcess (current executable process) is NULL, consider idle
                 enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
                 executeWaitingQueue(waitingQueue, readyQueue, 1);
-                // 현재 프로세스가 없다는 것을 표시
+                // Indicate that there is no current process
                 runProcess = NULL;
-                // preemption 허용. 안할 시 무한루프
-                deactivatePreeemptionCounter = 0;
+                // Allow preemption, otherwise infinite loop
+                deactivatePreemptionCounter = 0;
                 timeUnit++;
                 continue;
             } else {
-                // 다음 프로세스 실행
-                deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+                // Execute next process
+                deactivatePreemptionCounter = runProcess->cpuBurstTime - 1;
             }
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 1);
 
-        // 간트차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료
+        // Process termination
         if (runProcess->cpuBurstTime == 0) {
-            // 프로세스는 이번 타임 유닛까지 실행 후 다음 타임 유닛에 종료
-            runProcess->completionTime = timeUnit+1;
-            // 레디큐는 burst time으로 정렬되어있고 도착 순으로 실행하기에 현재 실행 중인 프로세스가 큐의 맨 앞이 아닐 수 있다
-            // 따라서 pid로 dequeue
+            // Process runs until this time unit and terminates in the next time unit
+            runProcess->completionTime = timeUnit + 1;
+            // Ready queue is sorted by burst time and executed in arrival order, so the current process may not be at the front
+            // Thus, dequeue by pid
             dequeueByPid(readyQueue, runProcess->pid);
-            // 안해주면 dequeue한 process가 다음 라운드에도 진행된다
+            // Prevent the dequeued process from being executed in the next round
             runProcess = NULL;
             n--;
         }
@@ -231,11 +213,8 @@ void sjfScheduling(Process* processes) {
     free(ganttQueue);
 }
 
-// 작은 프라이오리티 값이 높은 우선순위를 가진다
+// Smaller priority value means higher priority
 void preemptiveSjfScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -249,19 +228,15 @@ void preemptiveSjfScheduling(Process* processes) {
     GanttProcess *ganttQueue = NULL;
     int queueCount = 0;
 
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
     while(n > 0){
-        // enqueueSjf는 cpuBurstTime이 작은 순으로 정렬한다 (타이브레이커: 도착순)
+        // enqueueSjf sorts by shortest cpuBurstTime (tiebreaker: arrival time)
         for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
             if(processesCopy[i].arrivalTime == timeUnit){
                 enqueueSjf(readyQueue, &processesCopy[i]);
             }
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 1);
@@ -269,13 +244,13 @@ void preemptiveSjfScheduling(Process* processes) {
             continue;
         }
 
-        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
-        // non preemptive sjf: 레디큐가 처음부터 차있다
-        // preemptive sjf: cpuBurstTime으로 정렬된 상태로 실행 가능한 프로세스만 레디큐 기입
-        // 즉, preemptive sjf에서는 큐 맨 앞이 다음 실행할 프로세스
+        // Executable process exists, execute the process at the front of the queue
+        // Non-preemptive SJF: the ready queue is filled initially
+        // Preemptive SJF: only executable processes are enqueued, sorted by cpuBurstTime
+        // In preemptive SJF, the front of the queue is the next process to execute
         Process* runProcess = peek(readyQueue);
 
-        // I/O 처리
+        // Handle I/O
         if(runProcess->ioTime == 0){
             runProcess->ioTime--;
             dequeue(readyQueue);
@@ -291,35 +266,35 @@ void preemptiveSjfScheduling(Process* processes) {
             }
         }
 
-        // Preemptive됐다는 표시
-        // runProcess: 현재 실행 중인 프로세스
-        // currentProcess: 이전에 실행한 프로세스
+        // Indicate preemption
+        // runProcess: currently running process
+        // currentProcess: previously running process
         if(currentProcess != NULL && runProcess->cpuBurstTime < currentProcess->cpuBurstTime){
             /** Ex
-             * CPU Burst Time: A:4, B:2, C:3 일때
-             * Process A: T3 ~ T5 실행 (remaining: 2)
-             * Process B: T4 도착 (remaining: 2)
-             * Process C: T5 ~ T8 실행 (remaining: 0)
-             * T8에 실행할 프로세스는 A 혹은 B. 그러나 A실행 중에 B가 도착했기에 B가 실행되어야 한다 (longer waiting time)
-             * 따라서, A가 preempted됐다면 B뒤로 재배치
+             * CPU Burst Time: A:4, B:2, C:3
+             * Process A: runs T3 ~ T5 (remaining: 2)
+             * Process B: arrives at T4 (remaining: 2)
+             * Process C: runs T5 ~ T8 (remaining: 0)
+             * At T8, the next process should be A or B. Since B arrived while A was running, B should run (longer waiting time)
+             * If A was preempted, it should be reordered behind B
              */
             reorderProcess(readyQueue, currentProcess, 1);
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 1);
 
-        // 이전 프로세스를 현재 프로세스로 할당
+        // Assign the current process to the previous process
         currentProcess = runProcess;
 
-        // 간트차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료
+        // Process termination
         if (runProcess->cpuBurstTime == 0) {
-            runProcess->completionTime = timeUnit+1;
+            runProcess->completionTime = timeUnit + 1;
             dequeue(readyQueue);
             n--;
         }
@@ -335,9 +310,6 @@ void preemptiveSjfScheduling(Process* processes) {
 }
 
 void priorityScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -350,25 +322,20 @@ void priorityScheduling(Process* processes) {
     GanttProcess *ganttQueue = NULL;
     int queueCount = 0;
 
-    // Priority 순으로 레디큐 기입 (타이브레이커: 도착순)
+    // Enqueue processes in the ready queue sorted by priority (tiebreaker: arrival time)
     for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
         enqueuePriority(readyQueue, &processesCopy[i]);
     }
 
     Process* runProcess = NULL;
-    int deactivatePreeemptionCounter = 0;
-
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
+    int deactivatePreemptionCounter = 0;
     
      while(n > 0){
         Node* currentNode;
 
-        if(!deactivatePreeemptionCounter){
+        if(!deactivatePreemptionCounter){
             for(currentNode = readyQueue -> front; currentNode != NULL; currentNode = currentNode -> next){
-                // 실행 가능한 프로세스 여부 확인
+                // Check if process is executable
                 if (currentNode -> process -> arrivalTime <= timeUnit){
                     runProcess = currentNode -> process;
                     break;
@@ -376,7 +343,7 @@ void priorityScheduling(Process* processes) {
             }
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 2);
@@ -384,14 +351,14 @@ void priorityScheduling(Process* processes) {
             continue;
         }
 
-        // 프로세스 실행 중, 방해 금지
-        if(deactivatePreeemptionCounter == 0){
-            deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
-        }else{
-            deactivatePreeemptionCounter--;
+        // Process is running, do not interrupt
+        if(deactivatePreemptionCounter == 0){
+            deactivatePreemptionCounter = runProcess->cpuBurstTime - 1;
+        } else {
+            deactivatePreemptionCounter--;
         }
 
-        // I/O 처리
+        // Handle I/O
         if(runProcess->ioTime == 0){
             runProcess->ioTime--;
             dequeueByPid(readyQueue, runProcess->pid);
@@ -410,25 +377,25 @@ void priorityScheduling(Process* processes) {
                 enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
                 executeWaitingQueue(waitingQueue, readyQueue, 2);
                 runProcess = NULL;
-                deactivatePreeemptionCounter = 0;
+                deactivatePreemptionCounter = 0;
                 timeUnit++;
                 continue;
             } else {
-                deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+                deactivatePreemptionCounter = runProcess->cpuBurstTime - 1;
             }
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 2);
 
-        // 간트차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료
+        // Process termination
         if (runProcess->cpuBurstTime == 0) {
-            runProcess->completionTime = timeUnit+1;
+            runProcess->completionTime = timeUnit + 1;
             dequeueByPid(readyQueue, runProcess->pid);
             runProcess = NULL;
             n--;
@@ -445,9 +412,6 @@ void priorityScheduling(Process* processes) {
 }
 
 void preemptivePriorityScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -461,19 +425,15 @@ void preemptivePriorityScheduling(Process* processes) {
     GanttProcess *ganttQueue = NULL;
     int queueCount = 0;
 
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
     while(n > 0){
-        // Priority 순으로 레디큐 기입 (타이브레이커: 도착순)
+        // Enqueue processes in the ready queue sorted by priority (tiebreaker: arrival time)
         for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
             if(processesCopy[i].arrivalTime == timeUnit){
                 enqueuePriority(readyQueue, &processesCopy[i]);
             }
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 2);
@@ -481,10 +441,10 @@ void preemptivePriorityScheduling(Process* processes) {
             continue;
         }
 
-        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
+        // Executable process exists, execute the process at the front of the queue
         Process* runProcess = peek(readyQueue);
 
-        // I/O 처리
+        // Handle I/O
         if(runProcess->ioTime == 0){
             runProcess->ioTime--;
             dequeue(readyQueue);
@@ -499,24 +459,24 @@ void preemptivePriorityScheduling(Process* processes) {
             }
         }
 
-        // Preemtive 됐으므로 재배치
+        // Reorder due to preemption
         if(currentProcess != NULL && runProcess->priority < currentProcess->priority){
             reorderProcess(readyQueue, currentProcess, 2);
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 2);
 
         currentProcess = runProcess;
 
-        // 간트차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료
+        // Process termination
         if (runProcess->cpuBurstTime == 0) {
-            runProcess->completionTime = timeUnit+1;
+            runProcess->completionTime = timeUnit + 1;
             dequeue(readyQueue);
             n--;
         }
@@ -532,9 +492,6 @@ void preemptivePriorityScheduling(Process* processes) {
 }
 
 void roundRobinScheduling(Process* processes, int quantum){
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -549,15 +506,11 @@ void roundRobinScheduling(Process* processes, int quantum){
     int queueCount = 0;
 
     int quantumCounter = 0;
-    // 남은 burst time이 타임 퀀텀보다 작을 수도 있어서 따로 변수로 관리
+    // Manage remaining burst time separately as it may be less than the time quantum
     int runTime = 0;
 
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
     while(n > 0){
-        // enqueue: 도착순으로 레디큐에 프로세스 기입
+        // Enqueue: Enqueue processes in the ready queue in arrival order
         for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
             if(processesCopy[i].arrivalTime == timeUnit){
                 enqueue(readyQueue, &processesCopy[i]);
@@ -565,10 +518,10 @@ void roundRobinScheduling(Process* processes, int quantum){
             }
         }
 
-        // 실행 가능한 프로세스 O, 큐 맨 앞 프로세스 실행
+        // Executable process exists, execute the process at the front of the queue
         currentProcess = peek(readyQueue);
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(isEmpty(readyQueue)){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 0);
@@ -576,24 +529,24 @@ void roundRobinScheduling(Process* processes, int quantum){
             continue;
         }
         
-        // quantumCounter: 프로세스가 할당 받은 시간 동안에는 방해받지 않는다, non preemptive
+        // quantumCounter: process runs without interruption for the allocated time, non-preemptive
         if (!quantumCounter) {
             dequeue(readyQueue);
-            // 프로세스 종료
+            // Process termination
             if(currentProcess->cpuBurstTime == 0){
                 currentProcess->completionTime = timeUnit;
                 n--;
                 currentProcess = NULL;
-                // dequeue()를 여기서 하기에 스케쥴링 종료도 여기서 해주어야 한다
-                // n: 살아있는 프로세스 개수
-                if(n==0){
+                // As dequeue() is done here, scheduling termination should also be handled here
+                // n: number of alive processes
+                if(n == 0){
                     break;
                 }
-            } else { // 다시 레디큐 기입
+            } else { // Re-enqueue in the ready queue
                 enqueue(readyQueue, currentProcess);
             }
 
-            // 다음 프로세스 실행
+            // Execute next process
             if (!isEmpty(readyQueue)) {
                 currentProcess = peek(readyQueue);
             } else {
@@ -604,26 +557,26 @@ void roundRobinScheduling(Process* processes, int quantum){
                 continue;
             }
             
-            // 남은 burst time이 타임 퀀텀보다 작은 경우
+            // Handle case where remaining burst time is less than the time quantum
             runTime = (currentProcess->cpuBurstTime < quantum) ? currentProcess->cpuBurstTime : quantum;
             quantumCounter = --runTime;
         } else {
             quantumCounter--;
         }
 
-        // 간트 차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, currentProcess->pid, timeUnit, timeUnit + 1);
         currentProcess->cpuBurstTime--;
         currentProcess->ioTime--;
 
-        // I/O 처리
+        // Handle I/O
         if (currentProcess->ioTime == 0) {
             dequeue(readyQueue);
             enqueue(waitingQueue, currentProcess);
             quantumCounter = 0;
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 0);
 
         timeUnit++;
@@ -637,9 +590,6 @@ void roundRobinScheduling(Process* processes, int quantum){
 }
 
 void hrrnScheduling(Process* processes) {
-    // ================================================================
-    // │                            Setup                             │
-    // ================================================================
 
     int n = GLOBAL__PROCESS_COUNT;
     int timeUnit = 0;
@@ -653,29 +603,25 @@ void hrrnScheduling(Process* processes) {
     int queueCount = 0;
 
     Process* runProcess = NULL;
-    int deactivatePreeemptionCounter = 0;
+    int deactivatePreemptionCounter = 0;
 
     for(int i = 0; i < GLOBAL__PROCESS_COUNT; i++){
         enqueue(readyQueue, &processesCopy[i]);
     }
 
-    // ================================================================
-    // │                          Scheduling                          │  
-    // ================================================================
-
     while(n > 0){
-        // HRRN은 nonpreemptive
-        if(!deactivatePreeemptionCounter){
-            // highestResponseRatio(): 현재 실행 가능한 프로세스 중에서 HRR 반환
+        // HRRN is non-preemptive
+        if(!deactivatePreemptionCounter){
+            // highestResponseRatio(): Returns HRR among executable processes
             runProcess = highestResponseRatio(readyQueue, timeUnit);
             if(runProcess != NULL){
-                deactivatePreeemptionCounter = runProcess->cpuBurstTime - 1;
+                deactivatePreemptionCounter = runProcess->cpuBurstTime - 1;
             }
         } else {
-            deactivatePreeemptionCounter--;
+            deactivatePreemptionCounter--;
         }
 
-        // 실행 가능한 프로세스 X, idle 처리
+        // No executable process, consider idle
         if(runProcess == NULL){
             enqueueGanttProcess(&ganttQueue, &queueCount, -1, timeUnit, timeUnit + 1);
             executeWaitingQueue(waitingQueue, readyQueue, 0);
@@ -683,7 +629,7 @@ void hrrnScheduling(Process* processes) {
             continue;
         }
 
-        // I/O 처리
+        // Handle I/O
         if(runProcess->ioTime == 0){
             runProcess->ioTime--;
             dequeueByPid(readyQueue, runProcess->pid);
@@ -700,17 +646,17 @@ void hrrnScheduling(Process* processes) {
             }
         }
 
-        // Waiting queue 처리
+        // Handle waiting queue
         executeWaitingQueue(waitingQueue, readyQueue, 0);
 
-        // 간트차트 처리
+        // Handle Gantt chart
         enqueueGanttProcess(&ganttQueue, &queueCount, runProcess->pid, timeUnit, timeUnit + 1);
         runProcess->cpuBurstTime--;
         runProcess->ioTime--;
 
-        // 프로세스 종료
+        // Process termination
         if (runProcess->cpuBurstTime == 0) {
-            runProcess->completionTime = timeUnit+1;
+            runProcess->completionTime = timeUnit + 1;
             dequeueByPid(readyQueue, runProcess->pid);
             n--;
         }
